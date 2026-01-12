@@ -1,4 +1,4 @@
-### GRLA: BRIDGING SOFTMAX AND LINEAR ATTENTION VIA GAUSSIAN RBF KERNEL FOR LIGHTWEIGHT IMAGE SUPER-RESOLUTION
+# GRLA: BRIDGING SOFTMAX AND LINEAR ATTENTION VIA GAUSSIAN RBF KERNEL FOR LIGHTWEIGHT IMAGE SUPER-RESOLUTION
 
 ## Project Objective
 
@@ -6,4 +6,13 @@ The goal of this project is to understand the article, implement the proposed ar
 
 ## Article
 
-The paper is available [https://openreview.net/pdf?id=qS3LTUrncS](here).
+The paper is available [here](https://openreview.net/pdf?id=qS3LTUrncS).
+
+## Installation
+
+Create a ```venv``` using the command ```python -m venv venv``` and install the requirements using the command ```pip install -r requirements.txt```.
+
+### Data
+
+First the data needs to be downloaded from [here](https://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_train_HR.zip).
+Unzip it and put in the the data folder in the ```/src``` folder (the data folder will get ignored by the .gitignore).
