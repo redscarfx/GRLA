@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class TWSABlock(nn.Module):
+    '''
+    Implementation of the Transformed Window Self-Attention module
+    Uses MHA on windows of extracted patches from the feature map
+    '''
     def __init__(self, dim, window_size=8, num_heads=4):
         super().__init__()
         self.window_size = window_size
@@ -66,7 +70,7 @@ class WindowAttention(nn.Module):
 
     def forward(self, x):
         """
-        x: (num_windows*B, N, C)
+        x: (num windows  *B, window size * window size, C)
         """
         B_, N, C = x.shape
         qkv = self.qkv(x).reshape(
@@ -87,7 +91,7 @@ def window_partition(x, window_size):
     Args:
         x: (B, C, H, W)
     Returns:
-        windows: (num_windows*B, window_size*window_size, C)
+        windows: (num windows  *B, window size * window size, C)
     """
     B, C, H, W = x.shape
     x = x.view(
@@ -106,7 +110,7 @@ def window_partition(x, window_size):
 def window_reverse(windows, window_size, H, W):
     """
     Args:
-        windows: (num_windows*B, window_size*window_size, C)
+        windows: (num windows * B, window size * window size, C)
     Returns:
         x: (B, C, H, W)
     """

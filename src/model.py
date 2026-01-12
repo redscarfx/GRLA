@@ -7,6 +7,12 @@ from data_loader import DIV2KDataset
 from torch.utils.data import DataLoader, Subset
 
 class GRLASR(nn.Module):
+    '''
+    This is our main Super Resolution model using GRLA blocks
+    The head is fixed to a basic conv 3x3 layer,
+    followed by the body of the model which is a sequence of GRLA blocks (defined in grla.py)
+    the tail of the model upsamples and reconstructs the high resolution image
+    '''
     def __init__(
         self,
         scale=4,
@@ -15,12 +21,13 @@ class GRLASR(nn.Module):
     ):
         super().__init__()
 
-        self.head = nn.Conv2d(1, dim, 3, padding=1)
+        self.head = nn.Conv2d(1, dim, 3, padding=1) # this wont change, basic conv layer
 
         self.body = nn.Sequential(
-            *[GRLABlock(dim) for _ in range(num_blocks)]
+            *[GRLABlock(dim) for _ in range(num_blocks)] # stacked GRLA blocks
         )
 
+        # the tail also wont change, basic upsampling and reconstruction
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim * scale * scale, 3, padding=1),
             nn.PixelShuffle(scale),
@@ -36,6 +43,9 @@ class GRLASR(nn.Module):
     
 
 if __name__ == "__main__":
+    '''
+    Main training loop for the GRLA Super Resolution model
+    '''
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model = GRLASR(
