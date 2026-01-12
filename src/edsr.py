@@ -23,7 +23,6 @@ class ResidualBlock(nn.Module):
         res = self.conv2(self.relu(self.conv1(x)))
         return x + res
 
-
 class EDSR(nn.Module):
     ''' The default values are picked to be lighter than the original EDSR for faster training '''
     def __init__(self, scale=4, num_blocks=8, channels=64):
