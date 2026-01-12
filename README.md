@@ -16,3 +16,12 @@ Create a ```venv``` using the command ```python -m venv venv``` and install the 
 
 First the data needs to be downloaded from [here](https://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_train_HR.zip).
 Unzip it and put in the the data folder in the ```/src``` folder (the data folder will get ignored by the .gitignore).
+
+### Progress List
+
+- [x] Implement DataLoader
+- [x] Implement Bicubic Baseline
+- [x] Implement PSNR score calculator
+- [ ] Implement Convolution only SR model 
+- [ ] Implement Linear Attention
+- [ ] Implement GRBF Kernel
