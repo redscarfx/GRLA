@@ -34,11 +34,11 @@ class GRLABlock(nn.Module):
         self.tla = GRBFLA(dim, num_heads)
 
         # Feed-Forward Network
-        self.ffn = ConvFFN(dim) 
+        self.ffn = ConvFFN(dim) # not 100% about the architecture but should be fine for now
 
     def forward(self, x):
         shortcut = x
-        x = self.conv(x)
+        # x = self.conv(x) # i dont think we need the residual block here from edsr?
         x = self.twsa(x)
         x = self.tla(x)
         x = self.ffn(x)

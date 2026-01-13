@@ -7,7 +7,7 @@ model:
   num_heads: 4
   scale: 4
   dim: 56
-  num_blocks: 3 # original paper has 6 i think
+  num_blocks: 6 # original paper has 6 i think
 
 training:
   epochs: 1000
@@ -19,7 +19,7 @@ training:
   epsilon: 0.00000001
   lr_decay_step: 200
   lr_decay_gamma: 0.5
-  val_interval: 5
+  val_interval: 1
 
 dataset:
   root_dir: "src/data/DIV2K"
@@ -27,7 +27,7 @@ dataset:
   train_patch_size: 64
   val_patch_size: null
   augment: true
-  val_subset_size: 50
+  val_subset_size: 10
 
 optimizer:
   type: adam
