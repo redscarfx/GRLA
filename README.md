@@ -13,7 +13,7 @@ The paper is available [here](https://openreview.net/pdf?id=qS3LTUrncS).
 The model architecture is the following:
 
 ![Schematic illustration of the proposed Gaussian Radial Basis Function (GRBF)-based
-Linear Attention (GRLA)][docs\architecture.PNG]
+Linear Attention (GRLA)](docs\architecture.PNG)
 
 In our implementation, we built this to be fully modular. Each file contains different blocks, or parts of the different blocks. For example, the ```GRLA``` block is defined in the ```grla.py``` and it is built using the ```TWSABlock```, the ```TSABlock``` and the ```ConvFFN``` classes (each in their respective files). 
 
@@ -51,6 +51,8 @@ Unzip it and put in the the data folder in the ```/src``` folder (the data folde
 - [x] Implement PSNR score calculator
 - [X] Implement Convolution only SR model -> UPDATE: with a lite model (much smaller and less blocks than state-of-the-art) we get slightly better results and the bicubic baseline 
 - [X] Implement TWSA - > UPDATE: implemented this and seems to work fine (combined with EDSR layer) it gets results identical to baseline, and even a bit higher with more training time (not bad considering TLA is not added yet)
+- [ ] add conv layers before MHSA in TWSA
+- [ ] in TWSA use Batch Norm instead of Layer Norm?
 - [ ] Implement Transformer Linear Attention with GRL kernel
 - [X] Implement Code skeleton for main GRLA model (missing modules replaced with ```nn.Identity()```)
 - [ ] Download the Validation Set
