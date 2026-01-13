@@ -1,0 +1,25 @@
+# config.yaml
+
+device: auto
+
+model:
+  scale: 4
+  dim: 64
+  num_blocks: 2
+
+training:
+  epochs: 30
+  batch_size: 16
+  learning_rate: 1e-4
+  num_workers: 4
+
+dataset:
+  root_dir: "src/data/DIV2K"
+  scale: 4
+  train_patch_size: 64
+  val_patch_size: null
+  augment: true
+  val_subset_size: 100
+
+optimizer:
+  type: adam
