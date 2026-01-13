@@ -18,11 +18,13 @@ class GRLABlock(nn.Module):
         window_size=8,
         num_heads=4,
         include_layer_norm=False,
+        include_conv=True,
     ):
         super().__init__()
 
         # Local conv before the attention modules
-        #self.conv = ResidualBlock(dim)
+        # to complex
+        #self.res = ResidualBlock(dim)
 
         # MHA applied to the windows
         self.twsa = TWSABlock(
@@ -35,13 +37,15 @@ class GRLABlock(nn.Module):
         # Global Linear attention
         self.tla = GRBFLA(dim, num_heads, include_layer_norm=include_layer_norm)
 
+        self.conv = nn.Conv2d(dim, dim, 1, padding=0) # the one by one conv before the TWSA and TLA blocks
+
         # Feed-Forward Network
         # self.ffn = ConvFFN(dim) # not 100% about the architecture but should be fine for now
 
     def forward(self, x):
         shortcut = x
-        # x = self.conv(x) # i dont think we need the residual block here from edsr? Or its just too complex?
+        x = self.conv(x) # the 1x1 conv before the 2 attention blocks
         x = self.twsa(x)
         x = self.tla(x)
-        # x = self.ffn(x)
-        return x + shortcut
+        x = x + shortcut # add residual connection
+        return x

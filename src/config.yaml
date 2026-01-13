@@ -7,8 +7,8 @@ model:
   num_heads: 4
   scale: 4
   dim: 56
-  num_blocks: 3 # original paper has 6 i think
-  include_layer_norm: true
+  num_blocks: 5 # original paper has 6 i think but do -1 since we include that first block without local conv automatically
+  include_layer_norm: false
 
 training:
   epochs: 1000

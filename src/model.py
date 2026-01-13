@@ -27,7 +27,10 @@ class GRLASR(nn.Module):
         self.head = nn.Conv2d(1, dim, 3, padding=1) # this wont change, basic conv layer
 
         self.body = nn.Sequential(
-            *[GRLABlock(dim, window_size=window_size, num_heads=num_heads, include_layer_norm=include_layer_norm) for _ in range(num_blocks)] # stacked GRLA blocks
+            GRLABlock(dim, window_size=window_size, num_heads=num_heads, include_layer_norm=include_layer_norm, include_conv=False),  # first GRLA block without local conv
+            *[GRLABlock(dim, window_size=window_size, num_heads=num_heads, include_layer_norm=include_layer_norm, include_conv=True) for _ in range(num_blocks)], # stacked GRLA blocks
+            nn.Conv2d(dim, dim, 1, padding=0),  # the final 1x1 before the 3x3 conv before reconstruction
+            nn.Conv2d(dim, dim, 3, padding=1),  # 3x3 conv layer at the end of the body
         )
 
         # the tail also wont change, basic upsampling and reconstruction
@@ -39,10 +42,11 @@ class GRLASR(nn.Module):
 
     def forward(self, x):
         x = self.head(x)
-        res = self.body(x)
-        x = x + res
-        x = self.tail(x)
-        return x
+        res = x
+        body_out = self.body(x)
+        conv_out = body_out + res
+        reconstruction = self.tail(conv_out)
+        return reconstruction
     
 
 if __name__ == "__main__":

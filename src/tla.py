@@ -41,9 +41,9 @@ class GRBFLA(nn.Module):
             self.norm2 = nn.LayerNorm(dim)
 
         self.FFN = nn.Sequential(
-            nn.Linear(dim, dim * 4),
+            nn.Linear(dim, dim * 2),
             nn.GELU(),
-            nn.Linear(dim * 4, dim),
+            nn.Linear(dim * 2, dim),
         )
 
     def _phi(self, x):
