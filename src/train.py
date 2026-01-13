@@ -7,6 +7,7 @@ from validate import validate
 from data_loader import DIV2KDataset
 from model import GRLASR
 import yaml
+from time import time
 
 if __name__ == "__main__":
     '''
@@ -79,10 +80,14 @@ if __name__ == "__main__":
     
     print("Training GRLA model...")
 
+    start_time = time()
     for epoch in range(1, cfg["training"]["epochs"] + 1):
         train_loss = train_one_epoch(
             model, train_loader, optimizer, criterion, device
         )
+
+        current_time = time()
+        elapsed_time = current_time - start_time
 
         val_psnr = validate(
             model, val_loader, scale=4, device=device
@@ -96,5 +101,7 @@ if __name__ == "__main__":
             f"Epoch {epoch:03d} | "
             f"LR: {current_lr:.2e} | "
             f"Loss: {train_loss:.4f} | "
-            f"PSNR: {val_psnr:.2f} dB"
+            f"PSNR: {val_psnr:.2f} dB | "
+            # print time in seconds
+            f"Elapsed Time: {elapsed_time:.2f} sec"
         )
