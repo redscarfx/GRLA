@@ -51,10 +51,13 @@ Unzip it and put in the the data folder in the ```/src``` folder (the data folde
 - [x] Implement PSNR score calculator
 - [X] Implement Convolution only SR model -> UPDATE: with a lite model (much smaller and less blocks than state-of-the-art) we get slightly better results and the bicubic baseline 
 - [X] Implement TWSA - > UPDATE: implemented this and seems to work fine (combined with EDSR layer) it gets results identical to baseline, and even a bit higher with more training time (not bad considering TLA is not added yet)
-- [ ] add conv layers before MHSA in TWSA
-- [ ] in TWSA use Batch Norm instead of Layer Norm?
-- [ ] Implement Transformer Linear Attention with GRL kernel
+- [x] add conv layers before MHSA in TWSA
+- [x] in TWSA use Batch Norm instead of Layer Norm?
+- [ ] Keep layer norm in TWSA/TLA or remove? (experiment with it)
+- [X] Implement Transformer Linear Attention with GRL kernel
 - [X] Implement Code skeleton for main GRLA model (missing modules replaced with ```nn.Identity()```)
+- [ ] Log model info (trainable params, architecture per training, hyperparameters etc...)
+- [ ] Add proper logging of training
 - [ ] Download the Validation Set
 
 After this is done, test the model with different depths and hyperparameters (and might have to change the quantity of data if speed takes to long)
