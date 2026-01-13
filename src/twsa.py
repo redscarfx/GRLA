@@ -13,8 +13,8 @@ class TWSABlock(nn.Module):
 
         # the extra convolution before the MHSA + batch norms
         self.conv_path = nn.Sequential(
-            nn.Conv2d(dim, dim, 1),
             nn.BatchNorm2d(dim),
+            nn.Conv2d(dim, dim, 1),
             nn.Conv2d(dim, dim, 3, padding=1, groups=dim),  # depthwise
             nn.BatchNorm2d(dim),
             nn.Conv2d(dim, dim, 1),

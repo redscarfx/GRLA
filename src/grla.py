@@ -3,6 +3,7 @@ import torch.nn as nn
 from twsa import TWSABlock
 from edsr import ResidualBlock
 from ffn import ConvFFN
+from tla import GRBFLA
 
 class GRLABlock(nn.Module):
     '''
@@ -29,8 +30,8 @@ class GRLABlock(nn.Module):
             num_heads=num_heads,
         )
 
-        # Global Linear attention: TODO
-        self.tla = nn.Identity() 
+        # Global Linear attention
+        self.tla = GRBFLA(dim, num_heads)
 
         # Feed-Forward Network
         self.ffn = ConvFFN(dim) 
