@@ -7,27 +7,31 @@ class TWSABlock(nn.Module):
     Implementation of the Transformed Window Self-Attention module
     Uses MHA on windows of extracted patches from the feature map
     '''
-    def __init__(self, dim, window_size=8, num_heads=4):
+    def __init__(self, dim, window_size=8, num_heads=4, include_layer_norm=False):
         super().__init__()
         self.window_size = window_size
 
         # the extra convolution before the MHSA + batch norms
-        self.conv_path = nn.Sequential(
+        self.LFE = nn.Sequential(
             nn.BatchNorm2d(dim),
             nn.Conv2d(dim, dim, 1),
             nn.Conv2d(dim, dim, 3, padding=1, groups=dim),  # depthwise
             nn.BatchNorm2d(dim),
             nn.Conv2d(dim, dim, 1),
         )
+        self.include_layer_norm = include_layer_norm
 
-        self.norm1 = nn.LayerNorm(dim)
-        self.attn = WindowAttention(dim, window_size, num_heads)
+        if include_layer_norm:
+            self.norm1 = nn.LayerNorm(dim)
 
-        self.norm2 = nn.LayerNorm(dim)
-        self.mlp = nn.Sequential(
-            nn.Linear(dim, dim * 4),
+        self.MHSA = WindowAttention(dim, window_size, num_heads)
+
+        if include_layer_norm:
+            self.norm2 = nn.LayerNorm(dim)
+        self.FFN = nn.Sequential(
+            nn.Linear(dim, dim * 2),
             nn.GELU(),
-            nn.Linear(dim * 4, dim),
+            nn.Linear(dim * 2, dim),
         )
 
     def forward(self, x):
@@ -44,23 +48,25 @@ class TWSABlock(nn.Module):
 
         # convolutional path before the MHSA
         conv_res = x
-        x = self.conv_path(x)
+        x = self.LFE(x)
         x = x + conv_res
 
         # window attention
-        attn_res = x
-        x = window_partition(x, ws)    
-        x = self.norm1(x)
-        x = self.attn(x)
+        MHSA_res = x
+        x = window_partition(x, ws)  
+        if self.include_layer_norm:  
+            x = self.norm1(x)
+        x = self.MHSA(x)
         x = window_reverse(x, ws, Hp, Wp)  
 
-        x = x + attn_res
+        x = x + MHSA_res
 
         # FFN
         ffn_res = x
         x_flat = x.permute(0, 2, 3, 1)
-        x_flat = self.norm2(x_flat)
-        x_flat = self.mlp(x_flat)
+        if self.include_layer_norm:
+            x_flat = self.norm2(x_flat)
+        x_flat = self.FFN(x_flat)
         x = ffn_res + x_flat.permute(0, 3, 1, 2)
 
         # remove padding 
@@ -93,10 +99,10 @@ class WindowAttention(nn.Module):
         qkv = qkv.permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
 
-        attn = (q @ k.transpose(-2, -1)) * self.scale
-        attn = attn.softmax(dim=-1)
+        MHSA = (q @ k.transpose(-2, -1)) * self.scale
+        MHSA = MHSA.softmax(dim=-1)
 
-        x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
+        x = (MHSA @ v).transpose(1, 2).reshape(B_, N, C)
         x = self.proj(x)
         return x
 

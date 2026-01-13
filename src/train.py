@@ -1,13 +1,12 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
-from edsr import train_one_epoch
-from grla import GRLABlock
 from validate import validate
 from data_loader import DIV2KDataset
 from model import GRLASR
 import yaml
 from time import time
+from tqdm import tqdm
 
 if __name__ == "__main__":
     '''
@@ -22,6 +21,8 @@ if __name__ == "__main__":
         else cfg["device"]
     )
 
+    print(f"Using device: {device}")
+
     model = GRLASR(
         scale=cfg["model"]["scale"],
         dim=cfg["model"]["dim"],
@@ -31,6 +32,10 @@ if __name__ == "__main__":
     ).to(device)
 
     print(model)
+
+    # print total amount of trainable parameters
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Total trainable parameters: {total_params}")
 
     criterion = nn.L1Loss()
     optimizer = torch.optim.Adam(
@@ -66,7 +71,7 @@ if __name__ == "__main__":
     val_subset = Subset(val_dataset, range(cfg["dataset"]["val_subset_size"]))
     val_loader = DataLoader(
         val_subset,
-        batch_size=1,
+        batch_size=1, # wanted to increase this for speed but cannot because images vary in size?? SUper annoying
         shuffle=False,
     )
 
@@ -79,29 +84,57 @@ if __name__ == "__main__":
     )
     
     print("Training GRLA model...")
-
+    model.train()
     start_time = time()
+    # use pbar for logging
+    val_psnr = 0.0
     for epoch in range(1, cfg["training"]["epochs"] + 1):
-        train_loss = train_one_epoch(
-            model, train_loader, optimizer, criterion, device
-        )
+        total_loss = 0.0
 
-        current_time = time()
-        elapsed_time = current_time - start_time
+        # Batch-level progress bar
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{cfg['training']['epochs']}", leave=False)
+        batch_start = time()
+        for batch in pbar:
+            lr = batch["lr"].to(device)
+            hr = batch["hr"].to(device)
 
-        val_psnr = validate(
-            model, val_loader, scale=4, device=device
-        )
+            sr = model(lr)
+            loss = criterion(sr, hr)
 
-        scheduler.step()  
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.item()
+
+            # Update tqdm with current loss + batch time
+            batch_elapsed = time() - batch_start
+            pbar.set_postfix({
+                "batch_loss": f"{loss.item():.4f}",
+                "batch_time": f"{batch_elapsed:.2f}s"
+            })
+            batch_start = time()  # reset for next batch
+
+        # Average loss for the epoch
+        avg_loss = total_loss / len(train_loader)
+
+        # Validation
+        if epoch % cfg["training"]["val_interval"] == 0 or epoch == 1:
+            val_psnr = validate(
+                model, val_loader, scale=cfg["dataset"]["scale"], device=device
+            )
+
+        # Scheduler step
+        scheduler.step()
 
         current_lr = optimizer.param_groups[0]["lr"]
+        elapsed_time = time() - start_time
 
+        # Epoch-level print
         print(
             f"Epoch {epoch:03d} | "
             f"LR: {current_lr:.2e} | "
-            f"Loss: {train_loss:.4f} | "
+            f"Avg Loss: {avg_loss:.4f} | "
             f"PSNR: {val_psnr:.2f} dB | "
-            # print time in seconds
             f"Elapsed Time: {elapsed_time:.2f} sec"
         )

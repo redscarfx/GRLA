@@ -14,7 +14,7 @@ class GRBFLA(nn.Module):
     this gives us a linear complexity (we still need to compute phi(K)^T V, but this is done only once))
     """
 
-    def __init__(self, dim, num_heads=4, gamma=0.5, eps=1e-6):
+    def __init__(self, dim, num_heads=4, gamma=0.5, eps=1e-6, include_layer_norm=False):
         super().__init__()
 
         assert dim % num_heads == 0
@@ -25,7 +25,7 @@ class GRBFLA(nn.Module):
         self.gamma = gamma
         self.eps = eps
 
-        self.conv_path = nn.Sequential(
+        self.LFE = nn.Sequential(
             nn.BatchNorm2d(dim),
             nn.Conv2d(dim, dim, 1),
             nn.Conv2d(dim, dim, 3, padding=1, groups=dim),  # depthwise
@@ -36,11 +36,14 @@ class GRBFLA(nn.Module):
         self.qkv = nn.Conv2d(dim, dim * 3, kernel_size=1, bias=False)
         self.proj = nn.Conv2d(dim, dim, kernel_size=1)
 
-        self.norm2 = nn.LayerNorm(dim)
-        self.mlp = nn.Sequential(
-            nn.Linear(dim, dim * 4),
+        self.include_layer_norm = include_layer_norm
+        if include_layer_norm:
+            self.norm2 = nn.LayerNorm(dim)
+
+        self.FFN = nn.Sequential(
+            nn.Linear(dim, dim * 2),
             nn.GELU(),
-            nn.Linear(dim * 4, dim),
+            nn.Linear(dim * 2, dim),
         )
 
     def _phi(self, x):
@@ -59,7 +62,7 @@ class GRBFLA(nn.Module):
 
         # conv path
         conv_res = x
-        x = self.conv_path(x)
+        x = self.LFE(x)
         x = x + conv_res
 
         # GRBF Linear Attention
@@ -98,8 +101,11 @@ class GRBFLA(nn.Module):
         # FFN
         ffn_res = x
         x_flat = x.permute(0, 2, 3, 1)
-        x_flat = self.norm2(x_flat)
-        x_flat = self.mlp(x_flat)
+
+        if self.include_layer_norm:
+            x_flat = self.norm2(x_flat)
+
+        x_flat = self.FFN(x_flat)
         x = ffn_res + x_flat.permute(0, 3, 1, 2)
 
         return x
