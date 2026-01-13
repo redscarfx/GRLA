@@ -53,7 +53,7 @@ Unzip it and put in the the data folder in the ```/src``` folder (the data folde
 - [X] Implement TWSA - > UPDATE: implemented this and seems to work fine (combined with EDSR layer) it gets results identical to baseline, and even a bit higher with more training time (not bad considering TLA is not added yet)
 - [x] add conv layers before MHSA in TWSA
 - [x] in TWSA use Batch Norm instead of Layer Norm?
-- [ ] Keep layer norm in TWSA/TLA or remove? (experiment with it)
+- [X] Keep layer norm in TWSA/TLA or remove? (experiment with it) -> made it optional!
 - [X] Implement Transformer Linear Attention with GRL kernel
 - [X] Implement Code skeleton for main GRLA model (missing modules replaced with ```nn.Identity()```)
 - [ ] Log model info (trainable params, architecture per training, hyperparameters etc...)
@@ -64,7 +64,7 @@ After this is done, test the model with different depths and hyperparameters (an
 
 **NOTES:**
 
-I think there might be an issue with the model because of the param count. When we initialize everything the way they mention in the paper, with 6 MPB blocks, each block has the proper architecture and hyperparams we get about 1.5M parameters. But in the paper they say getting about 800k~900k. Not sure where this increase of params comes from but it could be the reason why training won't be optimal. Also trianing is taking place on a RTX 3070 at the moment.
+~~I think there might be an issue with the model because of the param count. When we initialize everything the way they mention in the paper, with 6 MPB blocks, each block has the proper architecture and hyperparams we get about 1.5M parameters. But in the paper they say getting about 800k~900k. Not sure where this increase of params comes from but it could be the reason why training won't be optimal. Also trianing is taking place on a RTX 3070 at the moment.~~ Nvm i fixed it was just a problem in the architecture, i fixed it now i think (get 10k more params but that's like a 1% difference so who cares).
 
 Also they say they trained for 1000 epochs, if we replicate that it will take forever because with a model of this size one epoch takes like 3min (6 MPB blocks). Need to find a workaround for that. Either reduce model complexity or lower training time, but we need to find a work around.
 Also possible vanishing gradient problem with too many blocks. Looks like sometimes the loss because NaN. It's surprised considering the amount of residual connections in the network. Need to look into that.
