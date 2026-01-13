@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 from twsa import TWSABlock
 from edsr import ResidualBlock
-
+from ffn import ConvFFN
+from tla import GRBFLA
 
 class GRLABlock(nn.Module):
     '''
@@ -29,8 +30,8 @@ class GRLABlock(nn.Module):
             num_heads=num_heads,
         )
 
-        # Global Linear attention: TODO
-        self.tla = nn.Identity() 
+        # Global Linear attention
+        self.tla = GRBFLA(dim, num_heads)
 
         # Feed-Forward Network
         self.ffn = ConvFFN(dim) 
@@ -42,19 +43,3 @@ class GRLABlock(nn.Module):
         x = self.tla(x)
         x = self.ffn(x)
         return x + shortcut
-    
-class ConvFFN(nn.Module):
-    '''
-    Basic feed forward netowrk using 1x1 convolutions and GELU for non linearity
-    '''
-    def __init__(self, dim, expansion=4):
-        super().__init__()
-        self.ffn = nn.Sequential(
-            nn.Conv2d(dim, dim * expansion, 1),
-            nn.GELU(),
-            nn.Conv2d(dim * expansion, dim, 1),
-        )
-
-    def forward(self, x):
-        return x + self.ffn(x)
-

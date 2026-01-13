@@ -11,6 +11,15 @@ class TWSABlock(nn.Module):
         super().__init__()
         self.window_size = window_size
 
+        # the extra convolution before the MHSA + batch norms
+        self.conv_path = nn.Sequential(
+            nn.BatchNorm2d(dim),
+            nn.Conv2d(dim, dim, 1),
+            nn.Conv2d(dim, dim, 3, padding=1, groups=dim),  # depthwise
+            nn.BatchNorm2d(dim),
+            nn.Conv2d(dim, dim, 1),
+        )
+
         self.norm1 = nn.LayerNorm(dim)
         self.attn = WindowAttention(dim, window_size, num_heads)
 
@@ -33,23 +42,28 @@ class TWSABlock(nn.Module):
 
         Hp, Wp = x.shape[2], x.shape[3] 
 
-        shortcut = x
+        # convolutional path before the MHSA
+        conv_res = x
+        x = self.conv_path(x)
+        x = x + conv_res
 
         # window attention
+        attn_res = x
         x = window_partition(x, ws)    
         x = self.norm1(x)
         x = self.attn(x)
         x = window_reverse(x, ws, Hp, Wp)  
 
-        x = x + shortcut
+        x = x + attn_res
 
         # FFN
+        ffn_res = x
         x_flat = x.permute(0, 2, 3, 1)
         x_flat = self.norm2(x_flat)
         x_flat = self.mlp(x_flat)
-        x = x + x_flat.permute(0, 3, 1, 2)
+        x = ffn_res + x_flat.permute(0, 3, 1, 2)
 
-        # remove padding
+        # remove padding 
         if pad_h > 0 or pad_w > 0:
             x = x[:, :, :H, :W]
 

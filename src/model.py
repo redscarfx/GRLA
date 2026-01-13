@@ -18,13 +18,15 @@ class GRLASR(nn.Module):
         scale=4,
         dim=64,
         num_blocks=6,
+        window_size=8,
+        num_heads=4,
     ):
         super().__init__()
 
         self.head = nn.Conv2d(1, dim, 3, padding=1) # this wont change, basic conv layer
 
         self.body = nn.Sequential(
-            *[GRLABlock(dim) for _ in range(num_blocks)] # stacked GRLA blocks
+            *[GRLABlock(dim, window_size=window_size, num_heads=num_heads) for _ in range(num_blocks)] # stacked GRLA blocks
         )
 
         # the tail also wont change, basic upsampling and reconstruction
@@ -43,9 +45,6 @@ class GRLASR(nn.Module):
     
 
 if __name__ == "__main__":
-    '''
-    Main training loop for the GRLA Super Resolution model
-    '''
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model = GRLASR(
@@ -57,29 +56,12 @@ if __name__ == "__main__":
     criterion = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-    val_dataset = DIV2KDataset(
-        root_dir="src/data/DIV2K",
-        split="train",
-        scale=4,
-        patch_size=None,
-        augment=False,
-    )
-
     train_dataset = DIV2KDataset(
         root_dir="src/data/DIV2K",
         split="train",
         scale=4,
         patch_size=64,  
         augment=True,  
-    )
-
-    # Take first 100 images since I did not download the validation set yet
-    val_subset = Subset(val_dataset, range(100))
-
-    val_loader = DataLoader(
-        val_subset,
-        batch_size=1,
-        shuffle=False,
     )
 
     train_loader = DataLoader(
@@ -90,19 +72,10 @@ if __name__ == "__main__":
         pin_memory=True,
     )
     
-    print("Training GRLA model...")
+    print("Sanity check for GRLA model...")
 
-    for epoch in range(1, 30):
-        train_loss = train_one_epoch(
-            model, train_loader, optimizer, criterion, device
-        )
-
-        val_psnr = validate(
-            model, val_loader, scale=4, device=device
-        )
-
-        print(
-            f"Epoch {epoch:03d} | "
-            f"Loss: {train_loss:.4f} | "
-            f"PSNR: {val_psnr:.2f} dB"
-        )
+    train_loss = train_one_epoch(
+        model, train_loader, optimizer, criterion, device
+    )
+    print("Train step completed. Model forward and backward pass working.")
+    print(f"Loss: {train_loss:.4f} ")
