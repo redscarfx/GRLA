@@ -61,3 +61,10 @@ Unzip it and put in the the data folder in the ```/src``` folder (the data folde
 - [ ] Download the Validation Set
 
 After this is done, test the model with different depths and hyperparameters (and might have to change the quantity of data if speed takes to long)
+
+**NOTES:**
+
+I think there might be an issue with the model because of the param count. When we initialize everything the way they mention in the paper, with 6 MPB blocks, each block has the proper architecture and hyperparams we get about 1.5M parameters. But in the paper they say getting about 800k~900k. Not sure where this increase of params comes from but it could be the reason why training won't be optimal. Also trianing is taking place on a RTX 3070 at the moment.
+
+Also they say they trained for 1000 epochs, if we replicate that it will take forever because with a model of this size one epoch takes like 3min (6 MPB blocks). Need to find a workaround for that. Either reduce model complexity or lower training time, but we need to find a work around.
+Also possible vanishing gradient problem with too many blocks. Looks like sometimes the loss because NaN. It's surprised considering the amount of residual connections in the network. Need to look into that.

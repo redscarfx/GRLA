@@ -38,7 +38,7 @@ class GRLABlock(nn.Module):
 
     def forward(self, x):
         shortcut = x
-        # x = self.conv(x) # i dont think we need the residual block here from edsr?
+        x = self.conv(x) # i dont think we need the residual block here from edsr? Or its just too complex?
         x = self.twsa(x)
         x = self.tla(x)
         x = self.ffn(x)

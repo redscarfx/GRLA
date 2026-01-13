@@ -7,7 +7,7 @@ model:
   num_heads: 4
   scale: 4
   dim: 56
-  num_blocks: 6 # original paper has 6 i think
+  num_blocks: 3 # original paper has 6 i think
 
 training:
   epochs: 1000
