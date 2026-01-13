@@ -13,7 +13,7 @@ The paper is available [here](https://openreview.net/pdf?id=qS3LTUrncS).
 The model architecture is the following:
 
 ![Schematic illustration of the proposed Gaussian Radial Basis Function (GRBF)-based
-Linear Attention (GRLA)](docs\architecture.PNG)
+Linear Attention (GRLA)](docs/architecture.png)
 
 In our implementation, we built this to be fully modular. Each file contains different blocks, or parts of the different blocks. For example, the ```GRLA``` block is defined in the ```grla.py``` and it is built using the ```TWSABlock```, the ```TSABlock``` and the ```ConvFFN``` classes (each in their respective files). 
 
