@@ -83,6 +83,8 @@ if __name__ == "__main__":
         pin_memory=True,
     )
     
+    scaler = torch.amp.GradScaler()
+
     print("Training GRLA model...")
     model.train()
     start_time = time()
@@ -98,12 +100,16 @@ if __name__ == "__main__":
             lr = batch["lr"].to(device)
             hr = batch["hr"].to(device)
 
-            sr = model(lr)
-            loss = criterion(sr, hr)
+            optimizer.zero_grad(set_to_none=True)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            with torch.autocast(device_type=device):
+                sr = model(lr)
+                loss = criterion(sr, hr)
+
+            # Add these 3 lines back:
+            scaler.scale(loss).backward()  
+            scaler.step(optimizer)
+            scaler.update()
 
             total_loss += loss.item()
 

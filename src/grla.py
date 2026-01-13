@@ -35,7 +35,11 @@ class GRLABlock(nn.Module):
         )
 
         # Global Linear attention
-        self.tla = GRBFLA(dim, num_heads, include_layer_norm=include_layer_norm)
+        self.tla = GRBFLA(
+            dim, 
+            num_heads=1, # hard coded to 1 head for now (i think paper does this?)
+            include_layer_norm=include_layer_norm
+        ) 
 
         self.conv = nn.Conv2d(dim, dim, 1, padding=0) # the one by one conv before the TWSA and TLA blocks
 

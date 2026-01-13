@@ -4,9 +4,9 @@ device: auto
 
 model:
   window_size: 8
-  num_heads: 4
+  num_heads: 5
   scale: 4
-  dim: 56
+  dim: 55
   num_blocks: 5 # original paper has 6 i think but do -1 since we include that first block without local conv automatically
   include_layer_norm: false
 
@@ -18,7 +18,7 @@ training:
   beta1: 0.9
   beta2: 0.999
   epsilon: 0.00000001
-  lr_decay_step: 200
+  lr_decay_step: 100
   lr_decay_gamma: 0.5
   val_interval: 1
 

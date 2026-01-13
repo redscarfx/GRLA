@@ -14,7 +14,7 @@ class GRBFLA(nn.Module):
     this gives us a linear complexity (we still need to compute phi(K)^T V, but this is done only once))
     """
 
-    def __init__(self, dim, num_heads=4, gamma=0.5, eps=1e-6, include_layer_norm=False):
+    def __init__(self, dim, num_heads=1, gamma=0.5, eps=1e-6, include_layer_norm=False):
         super().__init__()
 
         assert dim % num_heads == 0
@@ -51,7 +51,7 @@ class GRBFLA(nn.Module):
         GRBF feature map
         x: (B, heads, N, head_dim)
         """
-        return torch.exp(-self.gamma * x.pow(2)) * torch.exp(2 * self.gamma * x)
+        return torch.exp(-self.gamma * x.pow(2)) * torch.exp(2 * self.gamma * x) + 1e-6
 
     def forward(self, x):
         """
@@ -76,21 +76,26 @@ class GRBFLA(nn.Module):
         k = k.view(B, self.num_heads, self.head_dim, N).permute(0, 1, 3, 2)
         v = v.view(B, self.num_heads, self.head_dim, N).permute(0, 1, 3, 2)
 
-        # GRBF feature mapping
-        q_phi = self._phi(q)
-        k_phi = self._phi(k)
+        with torch.amp.autocast(device_type='cuda', enabled=False):
+            # tensors to float32
+            q = q.float()
+            k = k.float()
+            v = v.float()
+            
+            # GRBF feature mapping
+            q_phi = self._phi(q)
+            k_phi = self._phi(k)
+            # compute KV summary (linear attention core)
+            kv = torch.einsum("bhnd,bhne->bhde", k_phi, v)
 
-        # Compute KV summary (linear attention core)
-        kv = torch.einsum("bhnd,bhne->bhde", k_phi, v)
+            # nrmalization term
+            z = 1.0 / (
+                torch.einsum("bhnd,bhd->bhn", q_phi, k_phi.sum(dim=2))
+                + self.eps
+            )
 
-        # Normalization term
-        z = 1.0 / (
-            torch.einsum("bhnd,bhd->bhn", q_phi, k_phi.sum(dim=2))
-            + self.eps
-        )
-
-        # Attention output
-        out = torch.einsum("bhnd,bhde,bhn->bhne", q_phi, kv, z)
+            # attention output
+            out = torch.einsum("bhnd,bhde,bhn->bhne", q_phi, kv, z)
 
         # reshape back
         out = out.permute(0, 1, 3, 2).reshape(B, C, H, W)
