@@ -8,6 +8,33 @@ The goal of this project is to understand the article, implement the proposed ar
 
 The paper is available [here](https://openreview.net/pdf?id=qS3LTUrncS).
 
+## Model Architecture
+
+The model architecture is the following:
+
+![Schematic illustration of the proposed Gaussian Radial Basis Function (GRBF)-based
+Linear Attention (GRLA)][docs\architecture.PNG]
+
+In our implementation, we built this to be fully modular. Each file contains different blocks, or parts of the different blocks. For example, the ```GRLA``` block is defined in the ```grla.py``` and it is built using the ```TWSABlock```, the ```TSABlock``` and the ```ConvFFN``` classes (each in their respective files). 
+
+### Architecture Blocks Overview
+
+- **ConvResidualBlock**  
+  EDSR-style convolutional residual block that refines local features using two 3×3 convolutions with a skip connection.
+
+- **TWSABlock (Transformer Window Self-Attention)**  
+  Local self-attention block that models short-range dependencies by applying multi-head self-attention within spatial windows.
+
+- **TLA / GRBFLA (Transformer Linear Attention)**  
+  Global attention block that captures long-range dependencies using a GRBF linear attention mechanism with linear complexity.
+
+- **GRLABlock**  
+  Core building block of the model that sequentially combines convolutional refinement, local window attention (TWSA), and global linear attention (TLA).
+
+- **GRLASR Model**  
+  End-to-end super-resolution network composed of a shallow convolutional head, stacked GRLA blocks for feature extraction, and a pixel-shuffle-based upsampling tail.
+
+
 ## Installation
 
 Create a ```venv``` using the command ```python -m venv venv``` and install the requirements using the command ```pip install -r requirements.txt```.
