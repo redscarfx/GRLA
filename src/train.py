@@ -12,7 +12,7 @@ if __name__ == "__main__":
     '''
     Main training loop for the GRLA Super Resolution model
     '''
-    with open("config.yaml", "r") as f:
+    with open("src/config.yaml", "r") as f:
         cfg = yaml.safe_load(f)
 
     device = (
@@ -26,6 +26,8 @@ if __name__ == "__main__":
         dim=cfg["model"]["dim"],
         num_blocks=cfg["model"]["num_blocks"],  
     ).to(device)
+
+    print(model)
 
     criterion = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=cfg["training"]["learning_rate"])
