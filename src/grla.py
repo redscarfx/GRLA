@@ -17,29 +17,31 @@ class GRLABlock(nn.Module):
         dim,
         window_size=8,
         num_heads=4,
+        include_layer_norm=False,
     ):
         super().__init__()
 
         # Local conv before the attention modules
-        self.conv = ResidualBlock(dim)
+        #self.conv = ResidualBlock(dim)
 
         # MHA applied to the windows
         self.twsa = TWSABlock(
             dim=dim,
             window_size=window_size,
             num_heads=num_heads,
+            include_layer_norm=include_layer_norm,
         )
 
         # Global Linear attention
-        self.tla = GRBFLA(dim, num_heads)
+        self.tla = GRBFLA(dim, num_heads, include_layer_norm=include_layer_norm)
 
         # Feed-Forward Network
-        self.ffn = ConvFFN(dim) # not 100% about the architecture but should be fine for now
+        # self.ffn = ConvFFN(dim) # not 100% about the architecture but should be fine for now
 
     def forward(self, x):
         shortcut = x
-        x = self.conv(x) # i dont think we need the residual block here from edsr? Or its just too complex?
+        # x = self.conv(x) # i dont think we need the residual block here from edsr? Or its just too complex?
         x = self.twsa(x)
         x = self.tla(x)
-        x = self.ffn(x)
+        # x = self.ffn(x)
         return x + shortcut

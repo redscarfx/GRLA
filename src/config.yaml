@@ -8,6 +8,7 @@ model:
   scale: 4
   dim: 56
   num_blocks: 3 # original paper has 6 i think
+  include_layer_norm: true
 
 training:
   epochs: 1000

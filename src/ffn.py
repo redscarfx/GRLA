@@ -4,7 +4,7 @@ class ConvFFN(nn.Module):
     '''
     Basic feed forward netowrk using 1x1 convolutions and GELU for non linearity
     '''
-    def __init__(self, dim, expansion=4):
+    def __init__(self, dim, expansion=2):
         super().__init__()
         self.ffn = nn.Sequential(
             nn.Conv2d(dim, dim * expansion, 1),
