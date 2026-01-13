@@ -18,13 +18,15 @@ class GRLASR(nn.Module):
         scale=4,
         dim=64,
         num_blocks=6,
+        window_size=8,
+        num_heads=4,
     ):
         super().__init__()
 
         self.head = nn.Conv2d(1, dim, 3, padding=1) # this wont change, basic conv layer
 
         self.body = nn.Sequential(
-            *[GRLABlock(dim) for _ in range(num_blocks)] # stacked GRLA blocks
+            *[GRLABlock(dim, window_size=window_size, num_heads=num_heads) for _ in range(num_blocks)] # stacked GRLA blocks
         )
 
         # the tail also wont change, basic upsampling and reconstruction

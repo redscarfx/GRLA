@@ -3,15 +3,22 @@
 device: auto
 
 model:
+  window_size: 8
+  num_heads: 4
   scale: 4
   dim: 64
-  num_blocks: 2
+  num_blocks: 6
 
 training:
-  epochs: 30
-  batch_size: 16
-  learning_rate: 0.0001
+  epochs: 1000
+  batch_size: 32
+  learning_rate: 0.0005
   num_workers: 4
+  beta1: 0.9
+  beta2: 0.999
+  epsilon: 0.00000001
+  lr_decay_step: 200
+  lr_decay_gamma: 0.5
 
 dataset:
   root_dir: "src/data/DIV2K"

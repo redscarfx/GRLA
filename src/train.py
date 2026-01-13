@@ -25,12 +25,25 @@ if __name__ == "__main__":
         scale=cfg["model"]["scale"],
         dim=cfg["model"]["dim"],
         num_blocks=cfg["model"]["num_blocks"],  
+        window_size=cfg["model"]["window_size"],
+        num_heads=cfg["model"]["num_heads"],
     ).to(device)
 
     print(model)
 
     criterion = nn.L1Loss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=cfg["training"]["learning_rate"])
+    optimizer = torch.optim.Adam(
+        model.parameters(), 
+        lr=cfg["training"]["learning_rate"], 
+        betas=(cfg["training"]["beta1"], cfg["training"]["beta2"]), 
+        eps=cfg["training"]["epsilon"]
+    )
+
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer,
+        step_size=cfg["training"]["lr_decay_step"],  
+        gamma=cfg["training"]["lr_decay_gamma"],      
+    )
 
     val_dataset = DIV2KDataset(
         root_dir=cfg["dataset"]["root_dir"],
@@ -75,8 +88,13 @@ if __name__ == "__main__":
             model, val_loader, scale=4, device=device
         )
 
+        scheduler.step()  
+
+        current_lr = optimizer.param_groups[0]["lr"]
+
         print(
             f"Epoch {epoch:03d} | "
+            f"LR: {current_lr:.2e} | "
             f"Loss: {train_loss:.4f} | "
             f"PSNR: {val_psnr:.2f} dB"
         )
