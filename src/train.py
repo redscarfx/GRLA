@@ -33,12 +33,6 @@ if __name__ == "__main__":
         num_heads=cfg["model"]["num_heads"],
     ).to(device)
 
-    print(model)
-
-    # print total amount of trainable parameters
-    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"Total trainable parameters: {total_params}")
-
     criterion = nn.L1Loss()
     optimizer = torch.optim.Adam(
         model.parameters(), 
@@ -58,6 +52,7 @@ if __name__ == "__main__":
         split="val",
         scale=cfg["dataset"]["scale"],
         patch_size=None,
+        patches_per_image=1,
         augment=False, # always false for validation
     )
 
@@ -66,6 +61,7 @@ if __name__ == "__main__":
         split="train",
         scale=cfg["dataset"]["scale"],
         patch_size=cfg["dataset"]["train_patch_size"],  
+        patches_per_image=cfg["dataset"]["patches_per_image"],
         augment=cfg["dataset"]["augment"],  
     )
 
@@ -76,6 +72,7 @@ if __name__ == "__main__":
         shuffle=False,
     )
 
+    print("Preparing training data loader... Might take a minute (putting data into RAM)...")
     train_loader = DataLoader(
         train_dataset,
         batch_size=cfg["training"]["batch_size"],
@@ -88,6 +85,12 @@ if __name__ == "__main__":
 
     writer = SummaryWriter(log_dir=cfg["training"]["log_dir"])
 
+    print(model)
+
+    # print total amount of trainable parameters
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Total trainable parameters: {total_params}")
+
     # config to not lose track of hyperparameters for each run
     writer.add_text('Config', str(cfg), 0)
 
@@ -96,6 +99,10 @@ if __name__ == "__main__":
 
     #log architecture graph
     writer.add_graph(model, torch.randn(1, 1, 64, 64).to(device))
+
+    # see dataset size
+    print(f"Training dataset size: {len(train_dataset)} samples")
+    print(f"Validation dataset size: {len(val_dataset)} samples")
 
     print("Training GRLA model...")
     model.train()

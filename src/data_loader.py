@@ -2,6 +2,7 @@ import os
 import random
 from glob import glob
 from PIL import Image
+import torch
 from torch.utils.data import Dataset
 import torchvision.transforms.functional as TF
 import matplotlib.pyplot as plt
@@ -19,6 +20,7 @@ class DIV2KDataset(Dataset):
         split="train",
         scale=4,
         patch_size=64,
+        patches_per_image=16,
         use_y_channel=True,
         augment=True,
     ):
@@ -29,6 +31,7 @@ class DIV2KDataset(Dataset):
         self.patch_size = patch_size
         self.use_y = use_y_channel
         self.augment = augment if split == "train" else False
+        self.patches_per_image = patches_per_image if split == "train" else 1
 
         if split == "train":
             hr_dir = os.path.join(root_dir, "DIV2K/DIV2K_train_HR")
@@ -38,8 +41,13 @@ class DIV2KDataset(Dataset):
         self.hr_paths = sorted(glob(os.path.join(hr_dir, "*.png"))) # all the png images in the dir
         assert len(self.hr_paths) > 0, "No HR images found." # sanity check
 
+        self.hr_images = [
+            TF.to_tensor(Image.open(p).convert("RGB"))
+            for p in self.hr_paths
+        ] # preload all images in memory for speed
+
     def __len__(self):
-        return len(self.hr_paths)
+        return len(self.hr_paths) * self.patches_per_image
 
     def _random_crop(self, img): # standard SR random crop
         hr_crop = self.patch_size * self.scale
@@ -54,7 +62,8 @@ class DIV2KDataset(Dataset):
         if random.random() < 0.5:
             hr, lr = TF.vflip(hr), TF.vflip(lr)
         if random.random() < 0.5:
-            hr, lr = hr.rotate(90, expand=True), lr.rotate(90, expand=True)
+            hr = hr.transpose(Image.ROTATE_90)
+            lr = lr.transpose(Image.ROTATE_90)
         return hr, lr
 
     def _to_y(self, img): # convert to Y channel, this is used in some evaluations, like for PSNR
@@ -62,27 +71,46 @@ class DIV2KDataset(Dataset):
         return TF.to_tensor(y)
 
     def __getitem__(self, idx):
-        hr = Image.open(self.hr_paths[idx]).convert("RGB")
+        img_idx = idx // self.patches_per_image
 
+        # HR tensor: (3, H, W), range [0, 1]
+        hr = self.hr_images[img_idx].clone()
+
+        _, H, W = hr.shape
+
+        # --- Random crop (TRAIN ONLY) ---
         if self.patch_size is not None:
-            hr = self._random_crop(hr)
+            hr_crop = self.patch_size * self.scale
+            x = random.randint(0, W - hr_crop)
+            y = random.randint(0, H - hr_crop)
+            hr = hr[:, y:y+hr_crop, x:x+hr_crop]
 
-        lr = hr.resize(
-            (hr.width // self.scale, hr.height // self.scale),
-            resample=Image.Resampling.BICUBIC,
-        ) # generate LR image once fetched as a hr image
+        # --- Generate LR via bicubic downsampling ---
+        lr = torch.nn.functional.interpolate(
+            hr.unsqueeze(0),
+            scale_factor=1 / self.scale,
+            mode="bicubic",
+            align_corners=False
+        ).squeeze(0)
 
+        # --- Data augmentation (TRAIN ONLY) ---
         if self.augment:
-            hr, lr = self._augment(hr, lr) # only if specified we want augmentation
+            if random.random() < 0.5:
+                hr = torch.flip(hr, dims=[2])
+                lr = torch.flip(lr, dims=[2])
+            if random.random() < 0.5:
+                hr = torch.flip(hr, dims=[1])
+                lr = torch.flip(lr, dims=[1])
+            if random.random() < 0.5:
+                hr = hr.transpose(1, 2)
+                lr = lr.transpose(1, 2)
 
+        # --- Convert to Y channel (ONCE) ---
         if self.use_y:
-            hr = self._to_y(hr)
-            lr = self._to_y(lr)
-        else:
-            hr = TF.to_tensor(hr)
-            lr = TF.to_tensor(lr)
+            hr = 0.257 * hr[0:1] + 0.504 * hr[1:2] + 0.098 * hr[2:3] + 16/255
+            lr = 0.257 * lr[0:1] + 0.504 * lr[1:2] + 0.098 * lr[2:3] + 16/255
 
-        return { # return a dict with both images
+        return {
             "lr": lr,
             "hr": hr,
         }
@@ -93,6 +121,7 @@ if __name__ == "__main__":
         split="train",
         scale=4,
         patch_size=64,
+        patches_per_image=16,
     )
 
     sample = dataset[random.randint(0, len(dataset) - 1)] # get a random sample (this contains both lr and hr images)
