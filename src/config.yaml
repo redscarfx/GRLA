@@ -21,6 +21,8 @@ training:
   lr_decay_step: 100
   lr_decay_gamma: 0.5
   val_interval: 1
+  log_dir: "logs"
+  log_image_interval: 10
 
 dataset:
   root_dir: "src/data/DIV2K"
