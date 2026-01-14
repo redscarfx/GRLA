@@ -85,6 +85,27 @@ if __name__ == "__main__":
 
     writer = SummaryWriter(log_dir=cfg["training"]["log_dir"])
 
+    start_epoch = 1
+    # optionally resume from a checkpoint
+    if cfg["training"]["resume_checkpoint"] is not None:
+        ckpt_path = cfg["training"]["resume_checkpoint"]
+        print(f"Loading model and resuming from {ckpt_path}")
+
+        checkpoint = torch.load(ckpt_path, map_location=device)
+
+        model.load_state_dict(checkpoint["model_state"])
+        optimizer.load_state_dict(checkpoint["optimizer_state"])
+
+        if scheduler and checkpoint["scheduler_state"] is not None:
+            scheduler.load_state_dict(checkpoint["scheduler_state"])
+
+        if scaler and checkpoint.get("scaler_state") is not None:
+            scaler.load_state_dict(checkpoint["scaler_state"])
+
+        start_epoch = checkpoint["epoch"] + 1
+
+        print(f"Continued training at epoch {start_epoch}")
+
     print(model)
 
     # print total amount of trainable parameters
@@ -98,7 +119,7 @@ if __name__ == "__main__":
     writer.add_scalar('Params/total_trainable', total_params, 0)
 
     #log architecture graph
-    writer.add_graph(model, torch.randn(1, 1, 64, 64).to(device))
+    # writer.add_graph(model, torch.randn(1, 1, 64, 64).to(device))
 
     # see dataset size
     print(f"Training dataset size: {len(train_dataset)} samples")
@@ -109,7 +130,7 @@ if __name__ == "__main__":
     start_time = time()
 
     val_psnr = 0.0
-    for epoch in range(1, cfg["training"]["epochs"] + 1):
+    for epoch in range(start_epoch, cfg["training"]["epochs"] + 1):
         total_loss = 0.0
 
         # Batch-level progress bar
@@ -123,7 +144,7 @@ if __name__ == "__main__":
             optimizer.zero_grad(set_to_none=True)
 
             with torch.autocast(device_type=device):
-                sr = model(lr)
+                sr = model(lr) # should we clip this? => torch.clamp(model(lr), 0.0, 1.0) We can test later
                 loss = criterion(sr, hr)
 
             # speed up with scaler
@@ -133,6 +154,15 @@ if __name__ == "__main__":
 
             total_loss += loss.item()
 
+            """ total_norm = 0.0
+            for p in model.parameters():
+                if p.grad is not None:
+                    param_norm = p.grad.detach().data.norm(2)
+                    total_norm += param_norm.item() ** 2
+            total_norm = total_norm ** 0.5
+
+            writer.add_scalar("Gradients/grad_norm", total_norm, epoch) """
+            # idk which is better, the above or the below? 
             writer.add_scalar('Gradients/grad_norm', scaler.get_scale(), epoch)
 
             # Update tqdm with current loss + batch time
@@ -169,8 +199,15 @@ if __name__ == "__main__":
 
         # save model every n epochs
         if epoch % cfg["training"]["save_interval"] == 0:
-            torch.save(model, "models/model.pth")
-            torch.save(model.state_dict(), "models/model_weights.pth")
+            checkpoint = {
+                "epoch": epoch,
+                "model_state": model.state_dict(),
+                "optimizer_state": optimizer.state_dict(),
+                "scheduler_state": scheduler.state_dict() if scheduler else None,
+                "scaler_state": scaler.state_dict() if scaler else None,
+            }
+
+            torch.save(checkpoint, "models/checkpoint.pth")
 
         # Scheduler step
         scheduler.step()
