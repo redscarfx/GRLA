@@ -56,6 +56,7 @@ if __name__ == "__main__":
         augment=False, # always false for validation
     )
 
+    print("Preparing training data... Might take a minute (putting data into RAM)...")
     train_dataset = DIV2KDataset(
         root_dir=cfg["dataset"]["root_dir"],
         split="train",
@@ -72,7 +73,6 @@ if __name__ == "__main__":
         shuffle=False,
     )
 
-    print("Preparing training data loader... Might take a minute (putting data into RAM)...")
     train_loader = DataLoader(
         train_dataset,
         batch_size=cfg["training"]["batch_size"],
