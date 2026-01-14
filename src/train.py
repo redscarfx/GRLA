@@ -92,6 +92,12 @@ if __name__ == "__main__":
     # config to not lose track of hyperparameters for each run
     writer.add_text('Config', str(cfg), 0)
 
+    # log total trainable params
+    writer.add_scalar('Params/total_trainable', total_params, 0)
+
+    #log architecture graph
+    writer.add_graph(model, torch.randn(1, 1, 64, 64).to(device))
+
     print("Training GRLA model...")
     model.train()
     start_time = time()
@@ -155,6 +161,10 @@ if __name__ == "__main__":
             writer.add_image('Images/SR', sr_grid, epoch)
             writer.add_image('Images/HR', hr_grid, epoch)
 
+        # save model every n epochs
+        if epoch % cfg["training"]["save_interval"] == 0:
+            torch.save(model, "models/model.pth")
+            torch.save(model.state_dict(), "models/model_weights.pth")
 
         # Scheduler step
         scheduler.step()

@@ -23,6 +23,7 @@ training:
   val_interval: 1
   log_dir: "logs"
   log_image_interval: 10
+  save_interval: 50
 
 dataset:
   root_dir: "src/data/DIV2K"
