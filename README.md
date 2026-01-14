@@ -59,9 +59,13 @@ Same goes for the validation data which can be found [here](https://www.kaggle.c
 - [X] Implement Code skeleton for main GRLA model (missing modules replaced with ```nn.Identity()```)
 - [X] Log model info (trainable params, architecture per training, hyperparameters etc...)
 - [X] Add proper logging of training
-- [ ] Download the Validation Set
+- [X] Download the Validation Set
+- [ ] Train for > 100 epochs (change lr if resuming training)
 
 After this is done, test the model with different depths and hyperparameters (and might have to change the quantity of data if speed takes to long)
+
+Model does seem to steadily improve over time! We hit a score of > 29 dB at about 80 epochs. No doubt it will keep increasing if we look at the score and loss curves.
+Very expensive in terms of training time but baseline has been beat at the moment. 
 
 ### Logging
 
