@@ -11,19 +11,19 @@ model:
   include_layer_norm: false
 
 training:
-  epochs: 1000
+  epochs: 500
   batch_size: 32
   learning_rate: 0.0005
   num_workers: 0
   beta1: 0.9
   beta2: 0.999
   epsilon: 0.00000001
-  lr_decay_step: 100
+  lr_decay_step: 50
   lr_decay_gamma: 0.5
   val_interval: 1
   log_dir: "logs"
-  log_image_interval: 10
-  save_interval: 50
+  log_image_interval: 5
+  save_interval: 10
 
 dataset:
   root_dir: "src/data"
