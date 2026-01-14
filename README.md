@@ -43,6 +43,7 @@ Create a ```venv``` using the command ```python -m venv venv``` and install the 
 
 First the data needs to be downloaded from [here](https://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_train_HR.zip).
 Unzip it and put in the the data folder in the ```/src``` folder (the data folder will get ignored by the .gitignore).
+Same goes for the validation data which can be found [here](https://www.kaggle.com/datasets/bijaygurung/set5-superresolution?resource=download). We use the 'original' folder for validation but download the entire folder, and put the Set5 folder in data (remove from the archive folder it is stored in).
 
 ### Progress List
 
@@ -56,11 +57,24 @@ Unzip it and put in the the data folder in the ```/src``` folder (the data folde
 - [X] Keep layer norm in TWSA/TLA or remove? (experiment with it) -> made it optional!
 - [X] Implement Transformer Linear Attention with GRL kernel
 - [X] Implement Code skeleton for main GRLA model (missing modules replaced with ```nn.Identity()```)
-- [ ] Log model info (trainable params, architecture per training, hyperparameters etc...)
-- [ ] Add proper logging of training
+- [X] Log model info (trainable params, architecture per training, hyperparameters etc...)
+- [X] Add proper logging of training
 - [ ] Download the Validation Set
 
 After this is done, test the model with different depths and hyperparameters (and might have to change the quantity of data if speed takes to long)
+
+### Logging
+
+Everything is being tracked using tensorboard. All the runs are saved in the ```logs``` directory. Here is what we are currently being logged (will probably be updated in the future):
+
+- **Images**
+- **Loss**
+- **PSNR**
+- **Learning rate**
+- **Batch time**
+- **Gradient norm**
+- **GPU memory**
+- **Config**
 
 **NOTES:**
 

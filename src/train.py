@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
+import torchvision
 from validate import validate
 from data_loader import DIV2KDataset
 from model import GRLASR
 import yaml
 from time import time
 from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
 
 if __name__ == "__main__":
     '''
@@ -31,12 +33,6 @@ if __name__ == "__main__":
         num_heads=cfg["model"]["num_heads"],
     ).to(device)
 
-    print(model)
-
-    # print total amount of trainable parameters
-    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"Total trainable parameters: {total_params}")
-
     criterion = nn.L1Loss()
     optimizer = torch.optim.Adam(
         model.parameters(), 
@@ -53,9 +49,10 @@ if __name__ == "__main__":
 
     val_dataset = DIV2KDataset(
         root_dir=cfg["dataset"]["root_dir"],
-        split="train",
+        split="val",
         scale=cfg["dataset"]["scale"],
-        patch_size=cfg["dataset"]["val_patch_size"],
+        patch_size=None,
+        patches_per_image=1,
         augment=False, # always false for validation
     )
 
@@ -64,17 +61,18 @@ if __name__ == "__main__":
         split="train",
         scale=cfg["dataset"]["scale"],
         patch_size=cfg["dataset"]["train_patch_size"],  
+        patches_per_image=cfg["dataset"]["patches_per_image"],
         augment=cfg["dataset"]["augment"],  
     )
 
-    # Take first 100 images since I did not download the validation set yet
-    val_subset = Subset(val_dataset, range(cfg["dataset"]["val_subset_size"]))
+
     val_loader = DataLoader(
-        val_subset,
-        batch_size=1, # wanted to increase this for speed but cannot because images vary in size?? SUper annoying
+        val_dataset,
+        batch_size=1,
         shuffle=False,
     )
 
+    print("Preparing training data loader... Might take a minute (putting data into RAM)...")
     train_loader = DataLoader(
         train_dataset,
         batch_size=cfg["training"]["batch_size"],
@@ -83,10 +81,33 @@ if __name__ == "__main__":
         pin_memory=True,
     )
     
+    scaler = torch.amp.GradScaler()
+
+    writer = SummaryWriter(log_dir=cfg["training"]["log_dir"])
+
+    print(model)
+
+    # print total amount of trainable parameters
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Total trainable parameters: {total_params}")
+
+    # config to not lose track of hyperparameters for each run
+    writer.add_text('Config', str(cfg), 0)
+
+    # log total trainable params
+    writer.add_scalar('Params/total_trainable', total_params, 0)
+
+    #log architecture graph
+    writer.add_graph(model, torch.randn(1, 1, 64, 64).to(device))
+
+    # see dataset size
+    print(f"Training dataset size: {len(train_dataset)} samples")
+    print(f"Validation dataset size: {len(val_dataset)} samples")
+
     print("Training GRLA model...")
     model.train()
     start_time = time()
-    # use pbar for logging
+
     val_psnr = 0.0
     for epoch in range(1, cfg["training"]["epochs"] + 1):
         total_loss = 0.0
@@ -94,18 +115,25 @@ if __name__ == "__main__":
         # Batch-level progress bar
         pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{cfg['training']['epochs']}", leave=False)
         batch_start = time()
+        batch_times = [] # track batch times for logging
         for batch in pbar:
             lr = batch["lr"].to(device)
             hr = batch["hr"].to(device)
 
-            sr = model(lr)
-            loss = criterion(sr, hr)
+            optimizer.zero_grad(set_to_none=True)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            with torch.autocast(device_type=device):
+                sr = model(lr)
+                loss = criterion(sr, hr)
+
+            # speed up with scaler
+            scaler.scale(loss).backward()  
+            scaler.step(optimizer)
+            scaler.update()
 
             total_loss += loss.item()
+
+            writer.add_scalar('Gradients/grad_norm', scaler.get_scale(), epoch)
 
             # Update tqdm with current loss + batch time
             batch_elapsed = time() - batch_start
@@ -113,22 +141,46 @@ if __name__ == "__main__":
                 "batch_loss": f"{loss.item():.4f}",
                 "batch_time": f"{batch_elapsed:.2f}s"
             })
+            batch_times.append(batch_elapsed)
             batch_start = time()  # reset for next batch
+
+        # log average batch time per epoch
+        writer.add_scalar('Time/avg_batch_time', sum(batch_times) / len(batch_times), epoch)
 
         # Average loss for the epoch
         avg_loss = total_loss / len(train_loader)
+        writer.add_scalar('Loss/train', avg_loss, epoch) # log it
 
         # Validation
         if epoch % cfg["training"]["val_interval"] == 0 or epoch == 1:
             val_psnr = validate(
                 model, val_loader, scale=cfg["dataset"]["scale"], device=device
             )
+            writer.add_scalar('PSNR/val', val_psnr, epoch)
+
+        if epoch % cfg["training"]["log_image_interval"] == 0:
+            # log 4 images, we take the first 4 from the last batch (every 10 epochs)
+            lr_grid = torchvision.utils.make_grid(lr[:4])
+            sr_grid = torchvision.utils.make_grid(sr[:4])
+            hr_grid = torchvision.utils.make_grid(hr[:4])
+            writer.add_image('Images/LR', lr_grid, epoch)
+            writer.add_image('Images/SR', sr_grid, epoch)
+            writer.add_image('Images/HR', hr_grid, epoch)
+
+        # save model every n epochs
+        if epoch % cfg["training"]["save_interval"] == 0:
+            torch.save(model, "models/model.pth")
+            torch.save(model.state_dict(), "models/model_weights.pth")
 
         # Scheduler step
         scheduler.step()
 
         current_lr = optimizer.param_groups[0]["lr"]
+        writer.add_scalar('Learning_Rate', current_lr, epoch) # track lr to see how it evolves
         elapsed_time = time() - start_time
+
+        # GPU memory usage logging
+        writer.add_scalar('Memory/gpu_mem', torch.cuda.max_memory_allocated() / 1e9, epoch)
 
         # Epoch-level print
         print(
