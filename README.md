@@ -43,6 +43,7 @@ Create a ```venv``` using the command ```python -m venv venv``` and install the 
 
 First the data needs to be downloaded from [here](https://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_train_HR.zip).
 Unzip it and put in the the data folder in the ```/src``` folder (the data folder will get ignored by the .gitignore).
+Same goes for the validation data which can be found [here](https://www.kaggle.com/datasets/bijaygurung/set5-superresolution?resource=download). We use the 'original' folder for validation but download the entire folder, and put the Set5 folder in data (remove from the archive folder it is stored in).
 
 ### Progress List
 

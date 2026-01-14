@@ -55,9 +55,9 @@ if __name__ == "__main__":
 
     val_dataset = DIV2KDataset(
         root_dir=cfg["dataset"]["root_dir"],
-        split="train",
+        split="val",
         scale=cfg["dataset"]["scale"],
-        patch_size=cfg["dataset"]["val_patch_size"],
+        patch_size=None,
         augment=False, # always false for validation
     )
 
@@ -69,11 +69,10 @@ if __name__ == "__main__":
         augment=cfg["dataset"]["augment"],  
     )
 
-    # Take first 100 images since I did not download the validation set yet
-    val_subset = Subset(val_dataset, range(cfg["dataset"]["val_subset_size"]))
+
     val_loader = DataLoader(
-        val_subset,
-        batch_size=1, # wanted to increase this for speed but cannot because images vary in size?? SUper annoying
+        val_dataset,
+        batch_size=1,
         shuffle=False,
     )
 

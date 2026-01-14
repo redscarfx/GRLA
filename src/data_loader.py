@@ -31,9 +31,9 @@ class DIV2KDataset(Dataset):
         self.augment = augment if split == "train" else False
 
         if split == "train":
-            hr_dir = os.path.join(root_dir, "DIV2K_train_HR")
+            hr_dir = os.path.join(root_dir, "DIV2K/DIV2K_train_HR")
         else: 
-            hr_dir = os.path.join(root_dir, "DIV2K_valid_HR")
+            hr_dir = os.path.join(root_dir, "Set5/original")
 
         self.hr_paths = sorted(glob(os.path.join(hr_dir, "*.png"))) # all the png images in the dir
         assert len(self.hr_paths) > 0, "No HR images found." # sanity check

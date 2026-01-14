@@ -26,7 +26,7 @@ training:
   save_interval: 50
 
 dataset:
-  root_dir: "src/data/DIV2K"
+  root_dir: "src/data"
   scale: 4
   train_patch_size: 64
   val_patch_size: null
