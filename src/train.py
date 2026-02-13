@@ -130,6 +130,7 @@ if __name__ == "__main__":
     start_time = time()
 
     val_psnr = 0.0
+    val_ssim = 0.0
     for epoch in range(start_epoch, cfg["training"]["epochs"] + 1):
         total_loss = 0.0
 

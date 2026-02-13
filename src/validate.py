@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from metrics import calc_psnr
+from metrics import calc_psnr, calc_ssim
 from torch.utils.data import DataLoader, Subset
 from data_loader import DIV2KDataset
 from bicubic import BicubicBaseline
