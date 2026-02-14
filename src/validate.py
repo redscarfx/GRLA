@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from metrics import calc_psnr
+from metrics import calc_psnr, calc_ssim
 from torch.utils.data import DataLoader, Subset
 from data_loader import DIV2KDataset
 from bicubic import BicubicBaseline
@@ -11,6 +11,7 @@ def validate(model, dataloader, scale, device):
     model.eval()
 
     total_psnr = 0.0
+    total_ssim = 0.0
     count = 0
 
     for batch in dataloader:
@@ -20,12 +21,14 @@ def validate(model, dataloader, scale, device):
 
         sr = model(lr) # get the super resolved image from the model
         psnr = calc_psnr(sr, hr, scale)
+        ssim = calc_ssim(sr, hr, scale)
 
         # track batch values
         total_psnr += psnr
+        total_ssim +=ssim
         count += 1
 
-    return total_psnr / count # return our score 
+    return total_psnr / count, total_psnr/count # return our score 
 
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -67,5 +70,6 @@ if __name__ == "__main__":
     # non parameterized baseline model
     print("Validating Bicubic Baseline model...")
     model = BicubicBaseline(scale=4).to(device)
-    psnr = validate(model, val_loader, scale=4, device=device)
+    psnr, ssim = validate(model, val_loader, scale=4, device=device)
     print(f"Bicubic PSNR: {psnr:.2f} dB\n")
+    print(f"Bicubic SSIM: {ssim:.4f}\n")

@@ -130,6 +130,7 @@ if __name__ == "__main__":
     start_time = time()
 
     val_psnr = 0.0
+    val_ssim = 0.0
     for epoch in range(start_epoch, cfg["training"]["epochs"] + 1):
         total_loss = 0.0
 
@@ -183,10 +184,11 @@ if __name__ == "__main__":
 
         # Validation
         if epoch % cfg["training"]["val_interval"] == 0 or epoch == 1:
-            val_psnr = validate(
+            val_psnr, val_ssim= validate(
                 model, val_loader, scale=cfg["dataset"]["scale"], device=device
             )
             writer.add_scalar('PSNR/val', val_psnr, epoch)
+            writer.add_scalar("SSIM/val", val_ssim, epoch)
 
         if epoch % cfg["training"]["log_image_interval"] == 0:
             # log 4 images, we take the first 4 from the last batch (every 10 epochs)
@@ -225,5 +227,6 @@ if __name__ == "__main__":
             f"LR: {current_lr:.2e} | "
             f"Avg Loss: {avg_loss:.4f} | "
             f"PSNR: {val_psnr:.2f} dB | "
+            f"SSIM: {val_ssim:.4f} | "
             f"Elapsed Time: {elapsed_time:.2f} sec"
         )
