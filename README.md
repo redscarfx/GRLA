@@ -79,9 +79,9 @@ GRLA\SRC\DATA
 ```
 > Note: It is important for the data folder to have this structure for the code to find the data and run properly!
 
-### Running the code
+## Running the code
 
-#### Training
+### Training
 
 To train a new model, modify the ```config.yaml``` and remove any paths from the ```resume_checkpoint``` variable (which causes the training to resume from a pre-existing model).
 The training hyperparameters can all be changed from the config and the training script should work out of the box.
@@ -89,13 +89,13 @@ The training hyperparameters can all be changed from the config and the training
 To run a training just run ```python src/train.py```, the training can be monitored directly in the terminal but also through the tensorboard. During training, the model is evaluated
 every n epochs only on the *Set5* dataset
 
-#### Validation
+### Validation
 
 Models can be evaluated using the ```validation.py``` script. Just create/change the variable ```ckpt_path``` to evaluate the proper model (used in ```checkpoint = torch.load(ckpt_path, map_location=device)``` to load the model).
 
 The model is then evaluated on *Set5*, *Set14* and *BSD100*. It is evaluated on two metrics (PSNR and SSIM) and is compared to a bicubic basline to compare performance.
 
-### Progress List
+## Progress List
 
 - [x] Implement DataLoader
 - [x] Implement Bicubic Baseline
@@ -118,7 +118,7 @@ After this is done, test the model with different depths and hyperparameters (an
 Model does seem to steadily improve over time! We hit a score of > 29 dB at about 80 epochs. No doubt it will keep increasing if we look at the score and loss curves.
 Very expensive in terms of training time but baseline has been beat at the moment. 
 
-### Logging
+## Logging
 
 Everything is being tracked using tensorboard. All the runs are saved in the ```logs``` directory. Here is what we are currently being logged (will probably be updated in the future):
 
@@ -131,12 +131,14 @@ Everything is being tracked using tensorboard. All the runs are saved in the ```
 - **GPU memory**
 - **Config**
 
-### Future Improvements
+## Future Improvements
 
 - Study impact of hyperparameters
 - Study more the behavior on x2 and x3 resolution (this project focused mostly of x4)
 - Try and get exact match on parameters count (would need more specifications on the paper's implementation)
 - Add the other validation sets in the training script (currently only includes the Set5 validation)
+
+---
 
 ### Notes
 
