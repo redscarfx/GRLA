@@ -12,7 +12,7 @@ def calc_psnr(sr, hr, scale):
     """
 
     # assert shapes are compatible
-    assert sr.shape == hr.shape, "SR and HR shapes are different"
+    assert sr.shape == hr.shape, f"SR and HR shapes are different: {sr.shape} vs {hr.shape}"
 
     # mandatory crop of borders to ignre border effects
     if scale > 0:
