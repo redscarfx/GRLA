@@ -24,7 +24,7 @@ class DIV2KDataset(Dataset):
         use_y_channel=True,
         augment=True,
     ):
-        assert split in ["train", "val"] # atm we only have train but we will have val at some point
+        assert split in ["DIV2K", "Set5", "Set14", "BSD100"] # atm we only have train but we will have val at some point
         assert scale in [2, 3, 4] # DIV2K standard scales
 
         self.scale = scale
@@ -33,10 +33,14 @@ class DIV2KDataset(Dataset):
         self.augment = augment if split == "train" else False
         self.patches_per_image = patches_per_image if split == "train" else 1
 
-        if split == "train":
+        if split == "DIV2K" or split == "train":
             hr_dir = os.path.join(root_dir, "DIV2K/DIV2K_train_HR")
-        else: 
+        elif split == "Set5" or split == 'val': 
             hr_dir = os.path.join(root_dir, "Set5/original")
+        elif split == "Set14":
+            hr_dir = os.path.join(root_dir, "Set14")
+        elif split == "BSD100":
+            hr_dir = os.path.join(root_dir, "bsd100/bicubic_4x/val/HR")
 
         self.hr_paths = sorted(glob(os.path.join(hr_dir, "*.png"))) # all the png images in the dir
         assert len(self.hr_paths) > 0, "No HR images found." # sanity check
