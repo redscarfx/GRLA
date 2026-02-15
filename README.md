@@ -41,9 +41,59 @@ Create a ```venv``` using the command ```python -m venv venv``` and install the 
 
 ### Data
 
-First the data needs to be downloaded from [here](https://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_train_HR.zip).
-Unzip it and put in the the data folder in the ```/src``` folder (the data folder will get ignored by the .gitignore).
-Same goes for the validation data which can be found [here](https://www.kaggle.com/datasets/bijaygurung/set5-superresolution?resource=download). We use the 'original' folder for validation but download the entire folder, and put the Set5 folder in data (remove from the archive folder it is stored in).
+To train and evaluation the data, we use the *DIV2K* dataset for training and the *Set5*, *Set14* and *BSD100* for evaluation. All 4 datasets can be downloaded from kaggle at the following links:
+
+- [DIV2K](https://www.kaggle.com/datasets/soumikrakshit/div2k-high-resolution-images)
+- [Set5](https://www.kaggle.com/datasets/bijaygurung/set5-superresolution)
+- [Set14](https://www.kaggle.com/datasets/ll01dm/set-5-14-super-resolution-dataset)
+- [BSD100](https://www.kaggle.com/datasets/asilva1691/bsd100)
+
+All four of these folders need to be unzipped and placed in a folder called ```data``` inside of the ```src/``` folder. The structure of the ```data``` folder should be the following:
+
+```plaintext
+GRLA\SRC\DATA
+├───bsd100
+│   ├───bicubic_2x
+│   │   ├───train
+│   │   │   ├───HR
+│   │   │   └───LR
+│   │   └───val
+│   │       ├───HR
+│   │       └───LR
+│   └───bicubic_4x
+│       ├───train
+│       │   ├───HR
+│       │   └───LR
+│       └───val
+│           ├───HR
+│           └───LR
+├───DIV2K
+│   └───DIV2K_train_HR
+├───Set14
+└───Set5
+    ├───GTmod12
+    ├───LRbicx2
+    ├───LRbicx3
+    ├───LRbicx4
+    └───original
+```
+> Note: It is important for the data folder to have this structure for the code to find the data and run properly!
+
+### Running the code
+
+#### Training
+
+To train a new model, modify the ```config.yaml``` and remove any paths from the ```resume_checkpoint``` variable (which causes the training to resume from a pre-existing model).
+The training hyperparameters can all be changed from the config and the training script should work out of the box.
+
+To run a training just run ```python src/train.py```, the training can be monitored directly in the terminal but also through the tensorboard. During training, the model is evaluated
+every n epochs only on the *Set5* dataset
+
+#### Validation
+
+Models can be evaluated using the ```validation.py``` script. Just create/change the variable ```ckpt_path``` to evaluate the proper model (used in ```checkpoint = torch.load(ckpt_path, map_location=device)``` to load the model).
+
+The model is then evaluated on *Set5*, *Set14* and *BSD100*. It is evaluated on two metrics (PSNR and SSIM) and is compared to a bicubic basline to compare performance.
 
 ### Progress List
 
@@ -59,8 +109,9 @@ Same goes for the validation data which can be found [here](https://www.kaggle.c
 - [X] Implement Code skeleton for main GRLA model (missing modules replaced with ```nn.Identity()```)
 - [X] Log model info (trainable params, architecture per training, hyperparameters etc...)
 - [X] Add proper logging of training
-- [X] Download the Validation Set
-- [ ] Train for > 100 epochs (change lr if resuming training)
+- [X] Download the Validation sets
+- [x] Train for > 100 epochs (change lr if resuming training)
+- [x] Added SSIM score
 
 After this is done, test the model with different depths and hyperparameters (and might have to change the quantity of data if speed takes to long)
 
@@ -80,7 +131,14 @@ Everything is being tracked using tensorboard. All the runs are saved in the ```
 - **GPU memory**
 - **Config**
 
-**NOTES:**
+### Future Improvements
+
+- Study impact of hyperparameters
+- Study more the behavior on x2 and x3 resolution (this project focused mostly of x4)
+- Try and get exact match on parameters count (would need more specifications on the paper's implementation)
+- Add the other validation sets in the training script (currently only includes the Set5 validation)
+
+### Notes
 
 ~~I think there might be an issue with the model because of the param count. When we initialize everything the way they mention in the paper, with 6 MPB blocks, each block has the proper architecture and hyperparams we get about 1.5M parameters. But in the paper they say getting about 800k~900k. Not sure where this increase of params comes from but it could be the reason why training won't be optimal. Also trianing is taking place on a RTX 3070 at the moment.~~ Nvm i fixed it was just a problem in the architecture, i fixed it now i think (get 10k more params but that's like a 1% difference so who cares).
 
